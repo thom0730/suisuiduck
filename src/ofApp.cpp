@@ -22,20 +22,7 @@ void ofApp::setup(){
     gui.setup();
     gui.add(threshold_1.setup("threshold_1", 1.6, 0, 2));
     gui.add(threshold_2.setup("threshold_2", 1.3, 0, 2));
-    
-    //3Dmodel
-//    //we need to call this for textures to work on models
-//    ofDisableArbTex();
-//
-//    //this makes sure that the back of the model doesn't show through the front
-//    ofEnableDepthTest();
-    
-//    //now we load our model
-//    model.loadModel("suisui.stl");
-//    model.setPosition(ofGetWidth()/2, ofGetHeight()/2, -100);
-//
-//    light.enable();
-//    light.setPosition(model.getPosition() + ofPoint(0, 0, 1600));
+
 }
 
 //--------------------------------------------------------------
@@ -73,27 +60,52 @@ void ofApp::update(){
         
         index++;
     }
-
-}
-
-//--------------------------------------------------------------
-void ofApp::draw(){
-    ofSetColor(255);
+    
+    myFbo.begin();
+    ofClear(0);
     switch(sceneFLG){
             
         case 1:
             rolling();
             break;
-        
+            
         case 2:
             //first let's just draw the model with the model object
             //drawWithModel();
             //rollCam.begin(); //rollCam begin
             //then we'll learn how to draw it manually so that we have more control over the data
-            drawWithMesh();
+            drawWithMesh(3);
             //rollCam.end();  //rollCam end
             break;
     }
+    myFbo.end();
+
+}
+
+//--------------------------------------------------------------
+void ofApp::draw(){
+    /* Apply effects */
+    myGlitch.generateFx();
+    
+    /* draw effected view */
+    ofSetColor(255);
+    ofFill();
+    myFbo.draw(0, 0);
+//    switch(sceneFLG){
+//
+//        case 1:
+//            rolling();
+//            break;
+//
+//        case 2:
+//            //first let's just draw the model with the model object
+//            //drawWithModel();
+//            //rollCam.begin(); //rollCam begin
+//            //then we'll learn how to draw it manually so that we have more control over the data
+//            drawWithMesh();
+//            //rollCam.end();  //rollCam end
+//            break;
+//    }
     gui.draw();
 }
 //--------------------------------------------------------------
@@ -171,7 +183,7 @@ void ofApp::drawWithModel(){
 }
 //--------------------------------------------------------------
 //draw the model manually
-void ofApp::drawWithMesh(){
+void ofApp::drawWithMesh(int _i){
     
     //get the model attributes we need
     ofVec3f scale = model.getScale();
@@ -206,7 +218,7 @@ void ofApp::drawWithMesh(){
     if(getFFT<threshold_2){
         amplitude = getFFT/10;
     }else{
-         amplitude = getFFT*3;
+         amplitude = getFFT*_i;
     }
 
 
@@ -232,33 +244,36 @@ void ofApp::drawWithMesh(){
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    if (key=='q') {//All Random.
+    if (key=='z') {//All Random.
         rollCam.setRandomScale(0.5, 1.5);
         rollCam.setRandomPos(270);
     }
-    if (key=='w') {//Random rotate.
+    if (key=='x') {//Random rotate.
         rollCam.setRandomPos(270);
     }
-    if (key=='e') {//Inputting optional rotate.
+    if (key=='c') {//Inputting optional rotate.
         rollCam.setPos(0, 0, 0);
     }
-    if (key=='r') {//Random distance.
+    if (key=='v') {//Random distance.
         rollCam.setRandomScale(0.5, 1.5);
     }
-    if (key=='t') {//Inputting optional distance.
+    if (key=='b') {//Inputting optional distance.
         rollCam.setScale(1);
     }
 
-    if (key=='y') {
+    if (key=='n') {
         ofToggleFullscreen();
     }
-    if (key=='u') {
+    if (key=='m') {
         hide= !hide;
     }
-    
+    if (key=='0') {
+        myFbo.allocate(ofGetWidth(), ofGetHeight());
+        myGlitch.setup(&myFbo);
+        
+    }
     if (key=='1') {
         sceneFLG = 1;
-        
     }
     if (key=='2') {
         sceneFLG = 2;
@@ -273,11 +288,49 @@ void ofApp::keyPressed(int key){
         light.setPosition(model.getPosition() + ofPoint(0, 0, 1600));
     }
     
+    if (key == 'q') myGlitch.setFx(OFXPOSTGLITCH_CONVERGENCE    , true);
+    if (key == 'w') myGlitch.setFx(OFXPOSTGLITCH_GLOW            , true);
+    if (key == 'e') myGlitch.setFx(OFXPOSTGLITCH_SHAKER            , true);
+    if (key == 'r') myGlitch.setFx(OFXPOSTGLITCH_CUTSLIDER        , true);
+    if (key == 't') myGlitch.setFx(OFXPOSTGLITCH_TWIST            , true);
+    if (key == 'y') myGlitch.setFx(OFXPOSTGLITCH_OUTLINE        , true);
+    if (key == 'u') myGlitch.setFx(OFXPOSTGLITCH_NOISE            , true);
+    if (key == 'i') myGlitch.setFx(OFXPOSTGLITCH_SLITSCAN        , true);
+    if (key == 'o') myGlitch.setFx(OFXPOSTGLITCH_SWELL            , true);
+    if (key == 'p') myGlitch.setFx(OFXPOSTGLITCH_INVERT            , true);
+    
+    if (key == 'a') myGlitch.setFx(OFXPOSTGLITCH_CR_HIGHCONTRAST, true);
+    if (key == 's') myGlitch.setFx(OFXPOSTGLITCH_CR_BLUERAISE    , true);
+    if (key == 'e') myGlitch.setFx(OFXPOSTGLITCH_CR_REDRAISE    , true);
+    if (key == 'f') myGlitch.setFx(OFXPOSTGLITCH_CR_GREENRAISE    , true);
+    if (key == 'g') myGlitch.setFx(OFXPOSTGLITCH_CR_BLUEINVERT    , true);
+    if (key == 'y') myGlitch.setFx(OFXPOSTGLITCH_CR_REDINVERT    , true);
+    if (key == 'j') myGlitch.setFx(OFXPOSTGLITCH_CR_GREENINVERT    , true);
+    
+    
     
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key){
+    if (key == 'q') myGlitch.setFx(OFXPOSTGLITCH_CONVERGENCE    , false);
+    if (key == 'w') myGlitch.setFx(OFXPOSTGLITCH_GLOW            , false);
+    if (key == 'e') myGlitch.setFx(OFXPOSTGLITCH_SHAKER            , false);
+    if (key == 'r') myGlitch.setFx(OFXPOSTGLITCH_CUTSLIDER        , false);
+    if (key == 't') myGlitch.setFx(OFXPOSTGLITCH_TWIST            , false);
+    if (key == 'y') myGlitch.setFx(OFXPOSTGLITCH_OUTLINE        , false);
+    if (key == 'u') myGlitch.setFx(OFXPOSTGLITCH_NOISE            , false);
+    if (key == 'i') myGlitch.setFx(OFXPOSTGLITCH_SLITSCAN        , false);
+    if (key == 'o') myGlitch.setFx(OFXPOSTGLITCH_SWELL            , false);
+    if (key == 'p') myGlitch.setFx(OFXPOSTGLITCH_INVERT            , false);
+    
+    if (key == 'a') myGlitch.setFx(OFXPOSTGLITCH_CR_HIGHCONTRAST, false);
+    if (key == 's') myGlitch.setFx(OFXPOSTGLITCH_CR_BLUERAISE    , false);
+    if (key == 'e') myGlitch.setFx(OFXPOSTGLITCH_CR_REDRAISE    , false);
+    if (key == 'f') myGlitch.setFx(OFXPOSTGLITCH_CR_GREENRAISE    , false);
+    if (key == 'g') myGlitch.setFx(OFXPOSTGLITCH_CR_BLUEINVERT    , false);
+    if (key == 'y') myGlitch.setFx(OFXPOSTGLITCH_CR_REDINVERT    , false);
+    if (key == 'j') myGlitch.setFx(OFXPOSTGLITCH_CR_GREENINVERT    , false);
 
 }
 

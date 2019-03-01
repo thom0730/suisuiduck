@@ -1,4 +1,5 @@
 ofxAssimpModelLoader
 ofxGui
 ofxOsc
+ofxPostGlitch
 ofxRollingCam

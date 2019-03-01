@@ -5,6 +5,7 @@
 #include "ofxOsc.h"
 #include "ofxAssimpModelLoader.h"
 #include "ofxGui.h"
+#include "ofxPostGlitch.h"
 
 #define HOST "127.0.0.1"
 #define PORT 7401
@@ -50,7 +51,11 @@ public:
     
     //we added these functions to make it easier to switch between the two methods of drawing
     void drawWithModel();
-    void drawWithMesh();
+    void drawWithMesh(int _i);
+    
+    //glitch
+    ofFbo myFbo;
+    ofxPostGlitch myGlitch;
 
     
 };
