@@ -3,6 +3,8 @@
 void ofApp::setup(){
     ofSetFrameRate(60);
     ofSetVerticalSync(true);
+    ofSetCircleResolution(64);
+    
     
     rollCam.setup();//rollCam's setup.
     rollCam.setCamSpeed(0.1);//rollCam's speed set;
@@ -22,6 +24,9 @@ void ofApp::setup(){
     gui.setup();
     gui.add(threshold_1.setup("threshold_1", 1.6, 0, 2));
     gui.add(threshold_2.setup("threshold_2", 1.3, 0, 2));
+    
+    vbomesh.setUsage(GL_DYNAMIC_DRAW);
+    vbomesh.setMode(OF_PRIMITIVE_LINES);
 
 }
 
@@ -66,7 +71,7 @@ void ofApp::update(){
     switch(sceneFLG){
             
         case 1:
-            rolling();
+            drawRolling();
             break;
             
         case 2:
@@ -76,6 +81,11 @@ void ofApp::update(){
             //then we'll learn how to draw it manually so that we have more control over the data
             drawWithMesh(3);
             //rollCam.end();  //rollCam end
+            break;
+        case 3:
+            rollCam.begin();
+            drawNoiseLine();
+            rollCam.end();
             break;
     }
     myFbo.end();
@@ -109,7 +119,7 @@ void ofApp::draw(){
     gui.draw();
 }
 //--------------------------------------------------------------
-void ofApp::rolling(){
+void ofApp::drawRolling(){
     ofPushMatrix();
     ofTranslate(ofGetWidth()/2, ofGetWidth()/2);
     ofEnableLighting();
@@ -121,7 +131,7 @@ void ofApp::rolling(){
     rollCam.begin(); //rollCam begin
     ofEnableDepthTest();
     ofNoFill();
-    ofSetLineWidth(3);
+    ofSetLineWidth(2);
     ofSetColor(150,150, 255);
     ofDrawBox(0, 0, 0, ofGetHeight()/3 *getFFT );
     
@@ -134,7 +144,7 @@ void ofApp::rolling(){
     }
     
     ofNoFill();
-    ofSetLineWidth(3);
+    ofSetLineWidth(2);
     ofDrawBox(0, 0, 0, ofGetHeight()/3*1 *getFFT );
     rollCam.end();  //rollCam end
     
@@ -241,6 +251,23 @@ void ofApp::drawWithMesh(int _i){
     ofPopMatrix();
     gui.draw();
 }
+//--------------------------------------------------------------
+void ofApp::drawNoiseLine(){
+    vbomesh.clear();
+    for(int i=0;i<NUM;i++){
+        float fft = getFFT*5;
+        if(i%3 == 0){
+            fft = getFFT * 0.2;
+        }else if(i%4 == 0){
+            fft = getFFT * 20;
+        }
+        vbomesh.addVertex(vec[i]*fft);
+    }
+    glLineWidth(1);
+    ofSetColor(150,150, 255);
+    vbomesh.draw();
+    
+}
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
@@ -267,6 +294,9 @@ void ofApp::keyPressed(int key){
     if (key=='m') {
         hide= !hide;
     }
+    
+    
+    //=======scene==========
     if (key=='0') {
         myFbo.allocate(ofGetWidth(), ofGetHeight());
         myGlitch.setup(&myFbo);
@@ -287,6 +317,20 @@ void ofApp::keyPressed(int key){
         light.enable();
         light.setPosition(model.getPosition() + ofPoint(0, 0, 1600));
     }
+    if (key=='3') {
+        for(int i=0;i<NUM;i++){
+            int x = ofRandom(-ofGetHeight()/5,ofGetHeight()/5);
+            int y = ofRandom(-ofGetHeight()/5,ofGetHeight()/5);
+            int z = ofRandom(-ofGetHeight()/5,ofGetHeight()/5);
+            vec[i] = ofVec3f(x,y,z);
+            
+            vbomesh.addVertex(ofVec3f(x,y,z));
+        }
+        sceneFLG = 3;
+    }
+    
+    
+    //=======glitch==========
     
     if (key == 'q') myGlitch.setFx(OFXPOSTGLITCH_CONVERGENCE    , true);
     if (key == 'w') myGlitch.setFx(OFXPOSTGLITCH_GLOW            , true);

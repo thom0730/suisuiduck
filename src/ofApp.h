@@ -9,6 +9,7 @@
 
 #define HOST "127.0.0.1"
 #define PORT 7401
+#define NUM 800 //Noiseの頂点数
 
 class ofApp : public ofBaseApp{
 public:
@@ -37,7 +38,14 @@ public:
     
     int sceneFLG = 1;
     
-    void rolling();
+    //DRAWING FUNCTION
+    //1
+    void drawRolling();
+    //2
+    void drawWithModel();
+    void drawWithMesh(int _i);
+    //3
+    void drawNoiseLine();
     
     //OSC
     ofxOscReceiver receiver;
@@ -49,13 +57,13 @@ public:
     
     ofLight light;
     
-    //we added these functions to make it easier to switch between the two methods of drawing
-    void drawWithModel();
-    void drawWithMesh(int _i);
-    
     //glitch
     ofFbo myFbo;
     ofxPostGlitch myGlitch;
+    
+    //drawNoiseLine()
+    ofVboMesh vbomesh;
+    ofVec3f vec[NUM];
 
     
 };
