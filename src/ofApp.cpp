@@ -37,8 +37,10 @@ void ofApp::setup(){
     vbomesh.setMode(OF_PRIMITIVE_LINES);
     
     //Kinect
-    kinect.open(false, true, 0);
+    kinect.open(true, true, 0);
     kinect.start();
+    
+
 
 }
 
@@ -75,6 +77,12 @@ void ofApp::update(){
                 case 4:
                     AroundCam();
                     break;
+                case 5:
+                    AroundCam();
+                    break;
+                case 6:
+                    RollingCam();
+                    break;
             }
         }
         
@@ -85,6 +93,9 @@ void ofApp::update(){
     //Kinect UPDATE
     if(sceneFLG == 4){
         FrameNewKinect();
+    }
+    if(sceneFLG == 5){
+        drawCamMeshUpdate();
     }
     
     myFbo.begin();
@@ -110,6 +121,13 @@ void ofApp::update(){
             break;
         case 4:
             drawKinect();
+            break;
+            
+        case 5:
+            drawCamMesh();
+            break;
+        case 6:
+            drawWithMesh(20);;
             break;
     }
     myFbo.end();
@@ -155,6 +173,9 @@ void ofApp::AroundCam(){
 }
 //--------------------------------------------------------------
 void ofApp::drawRolling(){
+    vbomesh.clear();
+    vbomesh.setMode(OF_PRIMITIVE_LINES);
+    
     ofPushMatrix();
     ofTranslate(ofGetWidth()/2, ofGetWidth()/2);
     ofEnableLighting();
@@ -230,6 +251,8 @@ void ofApp::drawWithModel(){
 //draw the model manually
 void ofApp::drawWithMesh(int _i){
     
+    vbomesh.clear();
+    
     //get the model attributes we need
     ofVec3f scale = model.getScale();
     ofVec3f position = model.getPosition();
@@ -260,12 +283,16 @@ void ofApp::drawWithMesh(int _i){
     float liquidness = 5;
     //float amplitude = mouseY/100.0;
     float amplitude = 0;
-    if(getFFT<threshold_2){
-        amplitude = getFFT/10;
+    
+    if(_i<15){
+        if(getFFT<threshold_2){
+            amplitude = getFFT/10;
+        }else{
+            amplitude = getFFT*_i;
+        }
     }else{
-         amplitude = getFFT*_i;
+        amplitude = getFFT*_i;
     }
-
 
     float speedDampen = 5;
     vector<ofVec3f>& verts = mesh.getVertices();
@@ -299,6 +326,7 @@ void ofApp::drawNoiseLine(){
         vbomesh.addVertex(vec[i]*fft);
     }
     glLineWidth(1);
+    glPointSize(5);
     ofSetColor(150,150, 255);
     vbomesh.draw();
     
@@ -331,6 +359,11 @@ void ofApp::FrameNewKinect(){
 }
 //--------------------------------------------------------------
 void ofApp::drawKinect(){
+//    x=-10;
+//    y=180;
+//    z=180;
+//    scale=5;
+    
     ofClear(0);
     ofSetColor(ofFloatColor(0.4, 0.8, 1.0));
     if (vbomesh.getVertices().size()) {
@@ -348,9 +381,94 @@ void ofApp::drawKinect(){
     gui.draw();
     
 }
+//--------------------------------------------------------------
+void ofApp::drawCamMeshSetUp(){
+//    x=70;
+//    y=0;
+//    z=0;
+//    scale=0.5;
+
+    vbomesh.clear();
+
+    
+    int width = kinect.getColorPixelsRef().getWidth();
+    int height = kinect.getColorPixelsRef().getHeight();
+
+    //add one vertex to the mesh for each pixel
+    for (int y = 0; y < height; y+=2){
+        for (int x = 0; x<width; x+=2){
+             vbomesh.addVertex(ofPoint(x,y,0));    // mesh index = x + y*width
+            // this replicates the pixel array within the camera bitmap...
+            vbomesh.addColor(ofFloatColor(0,0,0));  // placeholder for colour data, we'll get this from the camera
+        }
+    }
+
+
+    for (int y = 0; y<height-1; y+=2){
+        for (int x=0; x<width-1; x+=2){
+            vbomesh.addIndex(x+y*width);                // 0
+            vbomesh.addIndex((x+1)+y*width);            // 1
+            vbomesh.addIndex(x+(y+1)*width);            // 10
+            
+            vbomesh.addIndex((x+1)+y*width);            // 1
+            vbomesh.addIndex((x+1)+(y+1)*width);        // 11
+            vbomesh.addIndex(x+(y+1)*width);            // 10
+        }
+    }
+    //this determines how much we push the meshes out
+    extrusionAmount = 300.0;
+}
+//--------------------------------------------------------------
+void ofApp::drawCamMeshUpdate(){
+    
+    if (kinect.isFrameNew()) {
+        
+        int width = kinect.getColorPixelsRef().getWidth();
+        int height = kinect.getColorPixelsRef().getHeight();
+
+        //this determines how far we extrude the mesh
+        for (int i=0; i< width*height-4; i+=2){
+            
+            ofFloatColor sampleColor(kinect.getColorPixelsRef()[i*3]/255.f,                // r
+                                     kinect.getColorPixelsRef()[i*3+1]/255.f,            // g
+                                     kinect.getColorPixelsRef()[i*3+2]/255.f);            // b
+            
+            //now we get the vertex aat this position
+            //we extrude the mesh based on it's brightness
+            ofVec3f tmpVec = vbomesh.getVertex(i);
+            tmpVec.z = sampleColor.getBrightness() * extrusionAmount;
+            vbomesh.setVertex(i, tmpVec);
+            
+            vbomesh.setColor(i, sampleColor);
+        }
+    }
+}
+//--------------------------------------------------------------
+void ofApp::drawCamMesh(){
+     ofPushMatrix();
+    //we have to disable depth testing to draw the video frame
+    ofDisableDepthTest();
+    //    vidGrabber.draw(20,20);
+    
+    //but we want to enable it to show the mesh
+    ofEnableDepthTest();
+    rollCam.begin();
+    
+    //You can either draw the mesh or the wireframe
+    ofTranslate(-ofGetWidth()/2, ofGetHeight()/2);
+    //vbomesh.drawWireframe();
+    vbomesh.drawFaces();
+    rollCam.end();
+    ofPopMatrix();
+
+}
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
+    if (key==' ') {//Inputting optional rotate.
+        rollCam.setPos(x, y, z);
+        rollCam.setScale(scale);
+    }
     if (key=='z') {//All Random.
         rollCam.setRandomScale(0.5, 1.5);
         rollCam.setRandomPos(270);
@@ -358,22 +476,11 @@ void ofApp::keyPressed(int key){
     if (key=='x') {//Random rotate.
         rollCam.setRandomPos(270);
     }
-    if (key=='c') {//Inputting optional rotate.
-        rollCam.setPos(0, 0, 0);
-    }
     if (key=='v') {//Random distance.
         rollCam.setRandomScale(0.5, 1.5);
     }
-    if (key=='b') {//Inputting optional distance.
-        rollCam.setScale(1);
-    }
 
-    if (key=='n') {
-        ofToggleFullscreen();
-    }
-    if (key=='m') {
-        hide= !hide;
-    }
+
     
     
     //=======scene==========
@@ -412,6 +519,22 @@ void ofApp::keyPressed(int key){
         vbomesh.setMode(OF_PRIMITIVE_POINTS);
         sceneFLG = 4;
     }
+    if (key=='5') {
+        drawCamMeshSetUp();
+        sceneFLG = 5;
+    }
+    if (key=='6') {
+        sceneFLG = 6;
+        //now we load our model
+        model.loadModel("suisui.stl");
+        model.setPosition(ofGetWidth()/2, ofGetHeight()/2, -1000);
+        //we need to call this for textures to work on models
+        ofDisableArbTex();
+        //this makes sure that the back of the model doesn't show through the front
+        ofEnableDepthTest();
+        light.enable();
+        light.setPosition(model.getPosition() + ofPoint(0, 0, 1600));
+    }
     
     
     //=======glitch==========
@@ -435,6 +558,14 @@ void ofApp::keyPressed(int key){
     if (key == 'y') myGlitch.setFx(OFXPOSTGLITCH_CR_REDINVERT    , true);
     if (key == 'j') myGlitch.setFx(OFXPOSTGLITCH_CR_GREENINVERT    , true);
     
+    
+    //=======mesh==========
+    if (key=='m') {
+        vbomesh.setMode(OF_PRIMITIVE_POINTS);
+    }
+    if (key=='n') {
+        vbomesh.setMode(OF_PRIMITIVE_LINES);
+    }
     
     
 }

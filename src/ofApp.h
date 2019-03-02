@@ -61,6 +61,12 @@ public:
     //4
     void FrameNewKinect();
     void drawKinect();
+    //5
+    void drawCamMeshSetUp();
+    void drawCamMeshUpdate();
+    void drawCamMesh();
+    //5
+    void drawGejiGeji();
     
     //OSC
     ofxOscReceiver receiver;
@@ -81,10 +87,8 @@ public:
     ofVec3f vec[NUM];
 
     //drawCamMesh()
-    ofCamera cam; // add mouse controls for camera movement
     float extrusionAmount;
-    ofVboMesh mainMesh;
-    ofVideoGrabber vidGrabber;
+
     //Kinect
     ofxMultiKinectV2 kinect;
     ofxFloatSlider minDistance;
@@ -93,6 +97,8 @@ public:
     ofxFloatSlider y;
     ofxFloatSlider z;
     ofxFloatSlider scale;
+    
+
     
     
 };
