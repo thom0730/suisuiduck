@@ -24,15 +24,28 @@ void ofApp::setup(){
     gui.setup();
     gui.add(threshold_1.setup("threshold_1", 1.6, 0, 2));
     gui.add(threshold_2.setup("threshold_2", 1.3, 0, 2));
+    minDistance = 10;
+    maxDistance = 500;
+    gui.add(minDistance.setup("minDistance", minDistance, 0, 500));
+    gui.add(maxDistance.setup("maxDistance", maxDistance, 0, 500));
+    gui.add(x.setup("x", -10, -180, 180));
+    gui.add(y.setup("y", 180, -180, 180));
+    gui.add(z.setup("z", 180, -180, 180));
+    gui.add(scale.setup("scale", 5, 0, 10));
     
     vbomesh.setUsage(GL_DYNAMIC_DRAW);
     vbomesh.setMode(OF_PRIMITIVE_LINES);
+    
+    //Kinect
+    kinect.open(false, true, 0);
+    kinect.start();
 
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     rollCam.update();   //rollCam's rotate update.
+    kinect.update();
     
     // OSCの個数分繰り返す
     int index = 0;
@@ -46,24 +59,32 @@ void ofApp::update(){
         
         if( index == 0 ){
             getFFT = ofMap( ofToFloat( m.getArgAsString(index) ), -90, 0, 0, 2 );
-            if(getFFT > threshold_1){
-                int num = ofRandom(3);
-                if(num == 0){
-                    rollCam.setRandomScale(1.0, 5.5);
-                    rollCam.setRandomPos(270);
-                }else if(num == 1){
-                    rollCam.setRandomPos(270);
-                }else if(num == 2){
-                    rollCam.setPos(-20, -10, -180);
-                    rollCam.setScale(0.3);
-                }else{
-                    rollCam.setRandomScale(1.0, 2.5);
-                }
-            }
             
+            switch(sceneFLG){
+                    
+                case 1:
+                    RollingCam();;
+                    break;
+                    
+                case 2:
+                    RollingCam();
+                    break;
+                case 3:
+                    RollingCam();
+                    break;
+                case 4:
+                    AroundCam();
+                    break;
+            }
         }
         
         index++;
+    }
+    
+    
+    //Kinect UPDATE
+    if(sceneFLG == 4){
+        FrameNewKinect();
     }
     
     myFbo.begin();
@@ -87,6 +108,9 @@ void ofApp::update(){
             drawNoiseLine();
             rollCam.end();
             break;
+        case 4:
+            drawKinect();
+            break;
     }
     myFbo.end();
 
@@ -101,22 +125,33 @@ void ofApp::draw(){
     ofSetColor(255);
     ofFill();
     myFbo.draw(0, 0);
-//    switch(sceneFLG){
-//
-//        case 1:
-//            rolling();
-//            break;
-//
-//        case 2:
-//            //first let's just draw the model with the model object
-//            //drawWithModel();
-//            //rollCam.begin(); //rollCam begin
-//            //then we'll learn how to draw it manually so that we have more control over the data
-//            drawWithMesh();
-//            //rollCam.end();  //rollCam end
-//            break;
-//    }
+
     gui.draw();
+    ofDrawBitmapStringHighlight("fps: " + ofToString(ofGetFrameRate()), ofGetWidth() - 120, 20);
+}
+//--------------------------------------------------------------
+void ofApp::RollingCam(){
+    if(getFFT > threshold_1){
+        int num = ofRandom(3);
+        if(num == 0){
+            rollCam.setRandomScale(1.0, 5.5);
+            rollCam.setRandomPos(270);
+        }else if(num == 1){
+            rollCam.setRandomPos(270);
+        }else if(num == 2){
+            rollCam.setPos(-20, -10, -180);
+            rollCam.setScale(0.3);
+        }else{
+            rollCam.setRandomScale(1.0, 2.5);
+        }
+    }
+    
+}
+//--------------------------------------------------------------
+void ofApp::AroundCam(){
+    rollCam.setPos(x, y, z);
+    rollCam.setScale(scale);
+    
 }
 //--------------------------------------------------------------
 void ofApp::drawRolling(){
@@ -166,7 +201,7 @@ void ofApp::drawRolling(){
 //        info += "Now Angle    : "+ofToString(rollCam.posN)+"\n";
 //        ofDrawBitmapString(info, 10,10);
 //    }
-    gui.draw();
+    //gui.draw();
     
 }
 //--------------------------------------------------------------
@@ -249,7 +284,7 @@ void ofApp::drawWithMesh(int _i){
     if(bHasTexture) texture.unbind();
     
     ofPopMatrix();
-    gui.draw();
+    //gui.draw();
 }
 //--------------------------------------------------------------
 void ofApp::drawNoiseLine(){
@@ -266,6 +301,51 @@ void ofApp::drawNoiseLine(){
     glLineWidth(1);
     ofSetColor(150,150, 255);
     vbomesh.draw();
+    
+}
+//--------------------------------------------------------------
+void ofApp::FrameNewKinect(){
+    if (kinect.isFrameNew()) {
+        
+        vbomesh.clear();
+        
+        int st = 2;
+        int w = kinect.getDepthPixelsRef().getWidth();
+        int h = kinect.getDepthPixelsRef().getHeight();
+        int minD = minDistance;
+        int maxD = maxDistance;
+        
+        for (int x = 0; x < w; x++) {
+            for (int y = 0; y < h; y++) {
+                float d = kinect.getDistanceAt(x, y);
+                if (d > minD && d < maxD) { // adjust depth range as you like
+                    ofVec3f p = kinect.getWorldCoordinateAt(x, y, d);
+                    vbomesh.addColor(ofColor(255));
+                    vbomesh.addVertex(p);
+                    vbomesh.addColor(ofFloatColor(0.4, 0.8, 1.0));
+                }
+            }
+        }
+    }
+    
+}
+//--------------------------------------------------------------
+void ofApp::drawKinect(){
+    ofClear(0);
+    ofSetColor(ofFloatColor(0.4, 0.8, 1.0));
+    if (vbomesh.getVertices().size()) {
+        ofPushStyle();
+        glPointSize(1);
+        rollCam.begin(); //rollCam begin
+        ofPushMatrix();
+        ofTranslate(0, 0, -100);
+        vbomesh.draw();
+        ofPopMatrix();
+        rollCam.end(); //rollCam begin
+        ofPopStyle();
+    }
+    //ofDrawBitmapStringHighlight("fps: " + ofToString(ofGetFrameRate()), ofGetWidth() - 120, 20);
+    gui.draw();
     
 }
 
@@ -327,6 +407,10 @@ void ofApp::keyPressed(int key){
             vbomesh.addVertex(ofVec3f(x,y,z));
         }
         sceneFLG = 3;
+    }
+    if (key=='4') {
+        vbomesh.setMode(OF_PRIMITIVE_POINTS);
+        sceneFLG = 4;
     }
     
     
