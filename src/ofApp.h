@@ -46,6 +46,8 @@ public:
     void drawWithMesh(int _i);
     //3
     void drawNoiseLine();
+    //4
+    //void drawCamMesh();
     
     //OSC
     ofxOscReceiver receiver;
@@ -65,5 +67,11 @@ public:
     ofVboMesh vbomesh;
     ofVec3f vec[NUM];
 
+    //drawCamMesh()
+    ofCamera cam; // add mouse controls for camera movement
+    float extrusionAmount;
+    ofVboMesh mainMesh;
+    ofVideoGrabber vidGrabber;
+    
     
 };
