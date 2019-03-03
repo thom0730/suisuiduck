@@ -25,9 +25,9 @@ void ofApp::setup(){
     gui.add(threshold_1.setup("threshold_1", 1.6, 0, 2));
     gui.add(threshold_2.setup("threshold_2", 1.3, 0, 2));
     minDistance = 10;
-    maxDistance = 500;
+    maxDistance = 1000;
     gui.add(minDistance.setup("minDistance", minDistance, 0, 500));
-    gui.add(maxDistance.setup("maxDistance", maxDistance, 0, 500));
+    gui.add(maxDistance.setup("maxDistance", maxDistance, 0, 1000));
     gui.add(x.setup("x", -10, -180, 180));
     gui.add(y.setup("y", 180, -180, 180));
     gui.add(z.setup("z", 180, -180, 180));
