@@ -98,6 +98,10 @@ public:
     ofxFloatSlider z;
     ofxFloatSlider scale;
     
+    
+private:
+    ofxSyphonServer mSyphonServer;
+    
 
     
     

@@ -40,6 +40,10 @@ void ofApp::setup(){
     kinect.open(true, true, 0);
     kinect.start();
     
+    
+    //For Syphon
+    mSyphonServer.setName("Main");
+    
 
 
 }
@@ -75,10 +79,12 @@ void ofApp::update(){
                     RollingCam();
                     break;
                 case 4:
-                    AroundCam();
+                    //AroundCam();
+                    RollingCam();
                     break;
                 case 5:
-                    AroundCam();
+                    //AroundCam();
+                    RollingCam();
                     break;
                 case 6:
                     RollingCam();
@@ -143,6 +149,8 @@ void ofApp::draw(){
     ofSetColor(255);
     ofFill();
     myFbo.draw(0, 0);
+    
+     mSyphonServer.publishScreen();
 
     gui.draw();
     ofDrawBitmapStringHighlight("fps: " + ofToString(ofGetFrameRate()), ofGetWidth() - 120, 20);
@@ -326,7 +334,7 @@ void ofApp::drawNoiseLine(){
         vbomesh.addVertex(vec[i]*fft);
     }
     glLineWidth(1);
-    glPointSize(5);
+    glPointSize(3);
     ofSetColor(150,150, 255);
     vbomesh.draw();
     
@@ -359,10 +367,10 @@ void ofApp::FrameNewKinect(){
 }
 //--------------------------------------------------------------
 void ofApp::drawKinect(){
-//    x=-10;
-//    y=180;
-//    z=180;
-//    scale=5;
+    x=-10;
+    y=180;
+    z=180;
+    scale=5;
     
     ofClear(0);
     ofSetColor(ofFloatColor(0.4, 0.8, 1.0));
@@ -383,10 +391,10 @@ void ofApp::drawKinect(){
 }
 //--------------------------------------------------------------
 void ofApp::drawCamMeshSetUp(){
-//    x=70;
-//    y=0;
-//    z=0;
-//    scale=0.5;
+    x=79;
+    y=0;
+    z=0;
+    scale=0.45;
 
     vbomesh.clear();
 
@@ -472,6 +480,10 @@ void ofApp::keyPressed(int key){
     if (key=='z') {//All Random.
         rollCam.setRandomScale(0.5, 1.5);
         rollCam.setRandomPos(270);
+        
+        int _rad = ofRandom(270);
+        float _scale = ofRandom(0.5, 1.5);
+        
     }
     if (key=='x') {//Random rotate.
         rollCam.setRandomPos(270);
